@@ -16,3 +16,5 @@ export const pick = (obj, ...fields) => {
 };
 
 pick(fruits, 'apple', 'orange')
+
+
