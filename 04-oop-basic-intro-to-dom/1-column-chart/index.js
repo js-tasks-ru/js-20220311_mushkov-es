@@ -1,85 +1,91 @@
 export default class ColumnChart {
-    constructor(data) {
-        this.data = data.data;
-        this.label = data.label;
-        this.value = data.value;
-        this.link = data.link;
-        this.formatHeading = data.formatHeading || ((value) => value);
+    changeableElements = {};
+    chartHeight = 50;
+
+    constructor({
+      data = [],
+      label = '',
+      link = '',
+      value = 0,
+      formatHeading = data => data
+    } = {}) {
+        this.data = data;
+        this.label = label;
+        this.value = value;
+        this.link = link;
+        this.value = formatHeading(value);
 
         this.render()
     }
 
-    getTimplate() {
-        let column = '';
-        for (const value of this.data) {
-            column += ` <div style="--value: ${value}" data-tooltip="${(value / 50 * 100).toFixed(0)}%"></div>`
+   get template() {
+       return `<div class="column-chart column-chart_loading" style="--chart-height: ${this.chartHeight}">
+       <div class="column-chart__title">
+         Total ${this.label}
+         ${this.checkLink()}
+       </div>
+       <div class="column-chart__container">
+         <div data-element="header" class="column-chart__header">
+           ${this.value}
+         </div>
+         <div data-element="body" class="column-chart__chart">
+         ${this.getColumnBody()}
+         </div>
+       </div>
+     </div>`
+   }
 
-        }
-        return column;
-    }
-
-    render() {
+   getColumnBody(){
+       const scale = this.chartHeight / Math.max(...this.data);
+       return this.data.map(elem => {
+           return `<div style="--value: ${Math.floor(elem * scale)}
+           " data-tooltip="${(elem * scale / this.chartHeight * 100).toFixed(0)}%"></div>`
+       }).join('')
         
-        if (this.data.length !== 0) {
-            const linkHtml = this.link ? `<a href="${this.link}" class="column-chart__link">View all</a>` : '';
+    }
+   render() {
+       const container = document.createElement('div');
+       container.innerHTML = this.template;
+       this.element = container.firstElementChild;
+       if (this.data.length) {
+           this.element.classList.remove("column-chart_loading")
+       }
 
-            const totalSales = this.data.reduce((accum, currentValue) => {
-                return accum + currentValue;
-            })
-            this.element = document.createElement('div')
-            this.element.innerHTML = `<div class="column-chart" style="--chart-height: 50">
-            <div class="column-chart__title">
-              Total ${this.label}
-              ${linkHtml}
-            </div>
-            <div class="column-chart__container">
-              <div data-element="header" class="column-chart__header">${this.formatHeading(totalSales)}</div>
-              <div data-element="body" class="column-chart__chart">
-                ${this.getTimplate()}
-              </div>
-            </div>
-          </div>
-        </div>`
-            this.element = this.element.firstElementChild
-
-        }
-        else {
-            
-            this.element = document.createElement('div')
-            this.element.innerHTML = `<div id="orders" class="dashboard__chart_orders">
-            <div class="column-chart column-chart_loading" style="--chart-height: 50">
-              <div class="column-chart__title">
-                Total orders
-                <a class="column-chart__link" href="#">View all</a>
-              </div>
-              <div class="column-chart__container">
-                <div data-element="header" class="column-chart__header">
-                  344
-                </div>
-                <div data-element="body" class="column-chart__chart">
-                    <img src="./charts-skeleton.svg">
-                </div>
-              </div>
-            </div>
-          </div>`
-            this.element = this.element.firstElementChild
-
-        }
+       this.changeableElements = this.getChangeableElements();
     }
 
+    getChangeableElements() {
+        const result = this.changeableElements;
+        const elements = this.element.querySelectorAll("[data-element]");
+        for (const subElement of elements) {
+            const name = subElement.dataset.element;
+            result[name] = subElement;
+        }
+        return result;
+    }
+
+    checkLink() {
+      return  this.link
+      ? `<a class="column-chart__link" href="${this.link}">View all</a>`
+      :''; 
+    }
     update(data) {
-        this.data = data
-        this.render()
+        this.data = data;
+        this.changeableElements.body.innerHTML = this.getColumnBody(data);
     }
 
     remove() {
         if (this.element) {
-            this.element.remove();
-    }
-    }
-
-    destroy() {
+          this.element.remove();
+        }
+      }
+    
+      destroy() {
         this.remove();
         this.element = null;
-    }
+        this.changeableElements = {};
+      }
+
+   
+    
 }
