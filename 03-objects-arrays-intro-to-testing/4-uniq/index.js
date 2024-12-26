@@ -4,10 +4,5 @@
  * @returns {*[]} - the new array with uniq values
  */
 export function uniq(arr) {
-    let uniqArr = new Set(arr);
-    const newArr = [];
-    uniqArr.forEach(elem => {
-        newArr.push(elem);
-    })
-    return newArr;
+  return [...new Set(arr)];
 }
